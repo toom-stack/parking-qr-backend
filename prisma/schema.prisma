@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  GUARD
+}
+
+enum ProblemType {
+  PARK_RED_WHITE
+  BLOCKING
+  NO_PARKING
+  OTHER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(GUARD)
+  createdAt    DateTime @default(now())
+
+  // ✅ เพิ่มข้อมูล รปภ
+  fullName     String?
+  employeeCode String?  @unique
+  phone        String?
+  email        String?  @unique
+
+  // ✅ เพิ่มเพื่อปิดใช้งานแทนการลบ
+  disabledAt   DateTime?
+
+  reports      Report[] @relation("GuardReports")
+}
+
+model Owner {
+  id        String    @id @default(cuid())
+  fullName  String
+  room      String?
+  year      Int?
+  faculty   String?
+  major     String?
+  phone     String?
+  createdAt DateTime  @default(now())
+
+  vehicles  Vehicle[]
+}
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  ownerId   String
+  plateNo   String
+  color     String?
+  brand     String?
+  model     String?
+  qrToken   String   @unique
+  createdAt DateTime @default(now())
+
+  owner     Owner    @relation(fields: [ownerId], references: [id])
+  reports   Report[]
+}
+
+model Report {
+  id           String        @id @default(cuid())
+  vehicleId    String
+  guardUserId  String
+  problemType  ProblemType
+  locationText String?
+  note         String?
+  reportedAt   DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+
+  vehicle      Vehicle       @relation(fields: [vehicleId], references: [id])
+  guard        User          @relation("GuardReports", fields: [guardUserId], references: [id])
+
+  // ✅ รูปหลักฐาน (1 report มีหลายรูป)
+  images       ReportImage[]
+}
+
+model ReportImage {
+  id        String   @id @default(cuid())
+  reportId  String
+  url       String
+  createdAt DateTime @default(now())
+
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+}

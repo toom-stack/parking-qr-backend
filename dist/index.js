@@ -746,6 +746,73 @@ app.get("/reports/admin", auth([client_1.Role.ADMIN]), async (req, res, next) =>
         next(err);
     }
 });
+// ---------- Admin Dashboard Summary ----------
+app.get("/reports/admin/summary", auth([client_1.Role.ADMIN]), async (req, res, next) => {
+  try {
+
+    const now = new Date();
+
+    // วันนี้
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+
+    const todayTotal = await prisma_1.prisma.report.count({
+      where: {
+        reportedAt: {
+          gte: todayStart,
+          lte: todayEnd
+        }
+      }
+    });
+
+    // เดือนนี้
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
+
+    const monthTotal = await prisma_1.prisma.report.count({
+      where: {
+        reportedAt: {
+          gte: monthStart,
+          lte: monthEnd
+        }
+      }
+    });
+
+    // ปัญหาที่พบมากที่สุด
+    const topProblems = await prisma_1.prisma.report.groupBy({
+      by: ["problemType"],
+      _count: true,
+      orderBy: {
+        _count: {
+          problemType: "desc"
+        }
+      },
+      take: 5
+    });
+
+    // ✅ สถานที่ที่โดนรายงานมากที่สุด
+    const topLocations = await prisma_1.prisma.report.groupBy({
+      by: ["locationText"],
+      _count: true,
+      orderBy: {
+        _count: {
+          locationText: "desc"
+        }
+      },
+      take: 5
+    });
+
+    res.json({
+      todayTotal,
+      monthTotal,
+      topProblems,
+      topLocations
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
 // ---------- Admin: Update report ----------
 app.patch("/reports/:id", auth([client_1.Role.ADMIN]), async (req, res, next) => {
     try {

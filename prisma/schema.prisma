@@ -17,6 +17,7 @@ model User {
   employeeCode String?   @unique
   fullName     String?
   phone        String?
+
   reports      Report[]  @relation("GuardReports")
 }
 
@@ -29,6 +30,7 @@ model Owner {
   major     String?
   phone     String?
   createdAt DateTime  @default(now())
+
   vehicles  Vehicle[]
 }
 
@@ -41,22 +43,34 @@ model Vehicle {
   model     String?
   qrToken   String   @unique
   createdAt DateTime @default(now())
-  reports   Report[]
+
   owner     Owner    @relation(fields: [ownerId], references: [id])
+  reports   Report[]
+
+  @@index([ownerId])
+  @@index([plateNo])
 }
 
 model Report {
   id           String        @id @default(cuid())
-  vehicleId    String
-  guardUserId  String
-  problemType  ProblemType
-  locationText String?
-  note         String?
-  reportedAt   DateTime      @default(now())
-  createdAt    DateTime      @default(now())
-  guard        User          @relation("GuardReports", fields: [guardUserId], references: [id])
-  vehicle      Vehicle       @relation(fields: [vehicleId], references: [id])
-  images       ReportImage[]
+  vehicleId     String
+  guardUserId   String
+  problemType   ProblemType
+  locationText  String?
+  note          String?
+  reportedAt    DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+
+  vehicle       Vehicle       @relation(fields: [vehicleId], references: [id])
+  guard         User          @relation("GuardReports", fields: [guardUserId], references: [id])
+  images        ReportImage[]
+
+  @@index([vehicleId])
+  @@index([guardUserId])
+  @@index([problemType])
+  @@index([reportedAt])
+  @@index([createdAt])
+  @@index([locationText])
 }
 
 model ReportImage {
@@ -64,6 +78,7 @@ model ReportImage {
   reportId  String
   url       String
   createdAt DateTime @default(now())
+
   report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
